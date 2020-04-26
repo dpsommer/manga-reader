@@ -1,0 +1,8 @@
+[run]
+branch = true
+parallel = true
+source =
+    reader/
+omit =
+    */__init__.py
+    reader/test/*
