@@ -15,12 +15,14 @@ class Source(ABC):
 
     def get_manga(self, title):
         chapters = {
-            chapter: self._get_pages(title, chapter) for chapter in self._get_chapters(title)
+            chapter: {
+                page: self._get_page_url(title, chapter, page) for page in self._get_pages(title, chapter)
+            } for chapter in self._get_chapters(title)
         }
         return Manga(title, chapters)
 
     @abstractmethod
-    def get_page_url(self, title, chapter, page):
+    def _get_page_url(self, title, chapter, page):
         pass
 
     @abstractmethod

@@ -9,7 +9,7 @@ class MangaReader(Source):
 
     BASE_URL = 'http://www.mangareader.net'
 
-    def get_page_url(self, title, chapter, page):
+    def _get_page_url(self, title, chapter, page):
         url = f"{self.BASE_URL}/{title}/{chapter}"
         if int(page) > 1:  # special case - mangareader first page has no page # in url
             url += f"/{page}"

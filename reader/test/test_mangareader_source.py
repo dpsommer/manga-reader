@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from ..manga import Manga
@@ -5,7 +7,39 @@ from ..sources import MangaReader
 
 MANGA_TITLE = 'fuuka'
 CHAPTER = 2
-PAGE = 3
+PAGE = 2
+MANGA_LIST_CONTENT = """
+<div class="series_col">
+    <a name=" "></a>
+    <div class="series_alpha">
+        <h2 class="series_alpha"><a href="#top"> </a></h2>
+        <ul class="series_alpha">
+            <li>
+                <a href="/ichiba-kurogane-wa-kasegitai"> Ichiba Kurogane wa Kasegitai</a>
+                <span class="mangacompleted">[Completed]</span>
+            </li>
+            <li>
+                <a href="/junjou-drop"> Junjou Drop</a>
+                <span class="mangacompleted">[Completed]</span>
+            </li>
+            <li>
+                <a href="/kanchigai-hime-to-usotsuki-shimobe"> Kanchigai Hime to Usotsuki Shimobe</a>
+                <span class="mangacompleted">[Completed]</span>
+            </li>
+            <li>
+                <a href="/musashi-kun-to-murayama-san-wa-tsukiatte-mita"> Musashi-kun to Murayama-san wa Tsukiatte Mita.</a>
+            </li>
+            <li>
+                <a href="/tobaku-datenroku-kaiji-kazuyahen"> Tobaku Datenroku Kaiji: Kazuyahen</a>
+            </li>
+            <li>
+                <a href="/welcome-to-ghost-city"> Welcome to Ghost City</a>
+            </li>
+        </ul>
+        <div class="clear">
+    </div>
+</div>
+"""
 OVERVIEW_CONTENT = """
 <div id="latestchapters">
     <div id="popularcaption">
@@ -78,8 +112,8 @@ FIRST_PAGE_CONTENT = """
 NTH_PAGE_CONTENT = """
 <div id="imgholder">
     <div id="zoomer" class="zoomimg zoomtop">+ Larger Image</div>
-    <a href="/fuuka/2/4">
-        <img id="img" width="800" height="1154" src="https://i5.imggur.net/fuuka/2/fuuka-4798609.jpg" alt="Fuuka 2 - Page 3" />
+    <a href="/fuuka/2/3">
+        <img id="img" width="800" height="1154" src="https://i5.imggur.net/fuuka/2/fuuka-4798607.jpg" alt="Fuuka 2 - Page 2" />
     </a>
     <div class="zoomimg zoombottom">+ Larger Image</div>
 </div>
@@ -90,10 +124,11 @@ NTH_PAGE_CONTENT = """
 def mangareader(requests_mock):
     source = MangaReader()
     overview_url = f"{source.BASE_URL}/{MANGA_TITLE}"
-    first_page_url = f"{source.BASE_URL}/{MANGA_TITLE}/{CHAPTER}"
+    first_page_url = re.compile("{}/\\d+".format(overview_url))
+    nth_page_url = re.compile("{}/\\d+/\\d+".format(overview_url))
     requests_mock.get(overview_url, text=OVERVIEW_CONTENT)
     requests_mock.get(first_page_url, text=FIRST_PAGE_CONTENT)
-    requests_mock.get(f'{first_page_url}/{PAGE}', text=NTH_PAGE_CONTENT)
+    requests_mock.get(nth_page_url, text=NTH_PAGE_CONTENT)
     return source
 
 
@@ -102,9 +137,18 @@ def test_get_manga_object(mocker, mangareader):
     manga = mangareader.get_manga(MANGA_TITLE)
     assert type(manga) == Manga
     assert manga.chapters == {
-        '152': [1, 2],
-        '1': [1, 2],
-        '2': [1, 2]
+        '152': {
+            1: 'https://i5.imggur.net/fuuka/2/fuuka-4798605.jpg',
+            2: 'https://i5.imggur.net/fuuka/2/fuuka-4798607.jpg'
+        },
+        '1': {
+            1: 'https://i5.imggur.net/fuuka/2/fuuka-4798605.jpg',
+            2: 'https://i5.imggur.net/fuuka/2/fuuka-4798607.jpg'
+        },
+        '2': {
+            1: 'https://i5.imggur.net/fuuka/2/fuuka-4798605.jpg',
+            2: 'https://i5.imggur.net/fuuka/2/fuuka-4798607.jpg'
+        }
     }
 
 
@@ -118,8 +162,12 @@ def test_get_page_count(mangareader):
 
 
 def test_get_image_url_for_first_page(mangareader):
-    assert mangareader.get_page_url(MANGA_TITLE, CHAPTER, 1) == "https://i5.imggur.net/fuuka/2/fuuka-4798605.jpg"
+    assert mangareader._get_page_url(MANGA_TITLE, CHAPTER, 1) == "https://i5.imggur.net/fuuka/2/fuuka-4798605.jpg"
 
 
 def test_get_image_url_for_nth_page(mangareader):
-    assert mangareader.get_page_url(MANGA_TITLE, CHAPTER, PAGE) == "https://i5.imggur.net/fuuka/2/fuuka-4798609.jpg"
+    assert mangareader._get_page_url(MANGA_TITLE, CHAPTER, PAGE) == "https://i5.imggur.net/fuuka/2/fuuka-4798607.jpg"
+
+
+def test_crawler(requests_mock, mangareader):
+    pass

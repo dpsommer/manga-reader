@@ -2,20 +2,19 @@ import os
 
 import requests
 
+from .common import ROOT_DIRECTORY
 from ..sources import MangaReader, Source
 
-HOME_DIRECTORY = os.path.expanduser('~')
-MANGA_DOWNLOAD_DIRECTORY = os.getenv('MANGA_HOME', os.path.join(HOME_DIRECTORY, 'manga'))
+DEFAULT_DOWNLOAD_DIRECTORY = os.path.join(ROOT_DIRECTORY, 'manga')
+MANGA_DOWNLOAD_DIRECTORY = os.getenv('MANGA_HOME', DEFAULT_DOWNLOAD_DIRECTORY)
 
 
 class Downloader(object):
 
-    def __init__(self, source: Source = MangaReader, manga_home=MANGA_DOWNLOAD_DIRECTORY):
-        self.source = source()
+    def __init__(self, manga_home=MANGA_DOWNLOAD_DIRECTORY):
         self.manga_home = manga_home
 
-    def download_manga(self, title):
-        manga = self.source.get_manga(title)
+    def download_manga(self, manga):
         for chapter in manga.chapters.keys():
             chapter_dir = self._build_chapter_dirpath(manga, chapter)
             if not os.path.exists(chapter_dir):
@@ -27,11 +26,10 @@ class Downloader(object):
     def download_chapter(self, manga, chapter, chapter_dir=None):
         chapter_dir = chapter_dir or self._build_chapter_dirpath(manga, chapter)
         os.makedirs(chapter_dir, exist_ok=True)
-        for page in manga.chapters[chapter]:
-            self._download_page(manga, chapter, page, chapter_dir)
+        for page, img_url in manga.chapters[chapter].items():
+            self._download_page(manga, chapter, page, img_url, chapter_dir)
 
-    def _download_page(self, manga, chapter, page, chapter_dir):
-        img_url = self.source.get_page_url(manga.title, chapter, page)
+    def _download_page(self, manga, chapter, page, img_url, chapter_dir):
         filepath = self._build_page_filepath(chapter_dir, page, img_url)
         self._stream_remote_image(img_url, filepath)
 
