@@ -1,1 +1,1 @@
-from .manga import Manga, MangaSchema
+from .manga import Manga, Chapter, Page, MangaSchema

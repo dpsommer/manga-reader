@@ -3,10 +3,10 @@ from whoosh.fields import SchemaClass, TEXT, KEYWORD, BOOLEAN, ID
 
 class MangaSchema(SchemaClass):
     title = TEXT(stored=True)
-    author = TEXT(stored=True)
-    artist = TEXT(stored=True)
-    description = TEXT  # TODO: should the description be stored separately?
-    tags = KEYWORD(stored=True, lowercase=True, commas=True, scorable=True)
+    author = TEXT
+    artist = TEXT
+    description = TEXT
+    tags = KEYWORD(lowercase=True, commas=True, scorable=True)
     completed = BOOLEAN
     url = ID(stored=True)
 
@@ -14,7 +14,7 @@ class MangaSchema(SchemaClass):
 class Manga(object):
 
     def __init__(self,
-                 title: str, chapters: dict,
+                 title: str, chapters=[],
                  author='', artist='', description='',
                  tags=[], completed=False):
         self.title = title
@@ -34,3 +34,26 @@ class Manga(object):
             'tags': ','.join(self.tags).encode(),
             'completed': self.completed
         }
+
+
+class Chapter(object):
+
+    def __init__(self, number, pages=[]):
+        self.number = number
+        self.pages = pages
+
+    def __eq__(self, o):
+        return self.number == o.number and set(self.pages) == set(o.pages)
+
+
+class Page(object):
+
+    def __init__(self, number, image_url):
+        self.number = number
+        self.image_url = image_url
+
+    def __eq__(self, o):
+        return self.number == o.number and self.image_url == o.image_url
+
+    def __hash__(self):
+        return hash((self.number, self.image_url))
