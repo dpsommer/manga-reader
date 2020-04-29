@@ -1,2 +1,2 @@
 from .source import Source
-from .mangareader import MangaReader
+from .mangareader import MangaReader, MangaReaderDocumentParser

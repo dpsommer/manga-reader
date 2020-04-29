@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from ..manga import Manga
+from ..manga import Manga, Chapter, Page
 
 
 class Source(ABC):
@@ -14,12 +14,16 @@ class Source(ABC):
         return cls.__instance
 
     def get_manga(self, title):
-        chapters = {
-            chapter: {
-                page: self._get_page_url(title, chapter, page) for page in self._get_pages(title, chapter)
-            } for chapter in self._get_chapters(title)
-        }
+        chapters = [
+            Chapter(chapter, pages=[
+                Page(page, self._get_page_url(title, chapter, page)) for page in self._get_pages(title, chapter)
+             ]) for chapter in self._get_chapters(title)
+        ]
         return Manga(title, chapters)
+
+    @abstractmethod
+    def crawl(self):
+        pass
 
     @abstractmethod
     def _get_page_url(self, title, chapter, page):
