@@ -3,7 +3,7 @@ import os
 import requests
 
 from .common import ROOT_DIRECTORY
-from ..sources import MangaReader, Source
+from ..manga import Manga, Chapter, Page
 
 DEFAULT_DOWNLOAD_DIRECTORY = os.path.join(ROOT_DIRECTORY, 'manga')
 MANGA_DOWNLOAD_DIRECTORY = os.getenv('MANGA_HOME', DEFAULT_DOWNLOAD_DIRECTORY)
@@ -13,29 +13,28 @@ class Downloader(object):
 
     def __init__(self, manga_home=MANGA_DOWNLOAD_DIRECTORY):
         self.manga_home = manga_home
+        self.chapter_dir = None
 
-    def download_manga(self, manga):
-        for chapter in manga.chapters.keys():
-            chapter_dir = self._build_chapter_dirpath(manga, chapter)
-            if not os.path.exists(chapter_dir):
-                self.download_chapter(manga, chapter, chapter_dir)
+    def download_manga(self, manga: Manga):
+        for chapter in manga.chapters:
+            self.chapter_dir = os.path.join(self.manga_home, manga.title, str(chapter.number))
+            if not os.path.exists(self.chapter_dir):
+                self.download_chapter(chapter)
 
-    def _build_chapter_dirpath(self, manga, chapter):
-        return os.path.join(self.manga_home, manga.title, str(chapter))
+    def download_chapter(self, chapter: Chapter):
+        if not self.chapter_dir:
+            raise Exception("No directory specified to download chapter!")
+        os.makedirs(self.chapter_dir, exist_ok=True)
+        for page in chapter.pages:
+            self.download_page(page)
 
-    def download_chapter(self, manga, chapter, chapter_dir=None):
-        chapter_dir = chapter_dir or self._build_chapter_dirpath(manga, chapter)
-        os.makedirs(chapter_dir, exist_ok=True)
-        for page, img_url in manga.chapters[chapter].items():
-            self._download_page(manga, chapter, page, img_url, chapter_dir)
+    def download_page(self, page: Page):
+        filepath = self._build_page_filepath(self.chapter_dir, page)
+        self._stream_remote_image(page.image_url, filepath)
 
-    def _download_page(self, manga, chapter, page, img_url, chapter_dir):
-        filepath = self._build_page_filepath(chapter_dir, page, img_url)
-        self._stream_remote_image(img_url, filepath)
-
-    def _build_page_filepath(self, directory, page, download_url):
-        filetype = download_url.split('.')[-1]
-        filename = f'{page}.{filetype}'
+    def _build_page_filepath(self, directory, page):
+        filetype = page.image_url.split('.')[-1]
+        filename = f'{page.number}.{filetype}'
         return os.path.join(directory, filename)
 
     def _stream_remote_image(self, url, filepath):
