@@ -46,20 +46,22 @@ def test_download_manga(mocker, requests_mock, downloader, test_manga):
     downloader.download_manga(test_manga)
     chapter = test_manga.chapters[0]
     page = chapter.pages[-1]  # get last page for assert_called_with
-    chapter_dir = os.path.join(TEST_DATA_DIR, test_manga.title, str(chapter.number))
-    page_file = downloader._build_page_filepath(chapter_dir, page)
+    page_file = downloader._build_page_filepath(page)
     mock_open.assert_called_with(page_file, 'wb')
     assert os.path.isdir(TEST_DATA_DIR)
 
 
 def test_download_chapter(mocker, downloader, test_manga):
-    mocker.patch('reader.utils.downloader.Downloader.download_page')
+    mocker.patch('reader.utils.downloader.Downloader._download_page')
     chapter = test_manga.chapters[0]
-    chapter_dir = os.path.join(downloader.manga_home, test_manga.title, str(chapter.number))
-    downloader.chapter_dir = chapter_dir
-    downloader.download_chapter(chapter)
+    downloader.download_chapter(test_manga, chapter)
     assert os.path.isdir(TEST_DATA_DIR)
 
+
+def test_error_if_no_chapter_dir_set(downloader, test_manga):
+    page = test_manga.chapters[0].pages[0]
+    with pytest.raises(Exception):
+        downloader._download_page(page)
 
 def test_skip_download_if_chapter_exists(mocker, downloader, test_manga):
     mocker.patch('os.path.exists', return_value=True)
@@ -72,6 +74,5 @@ def test_download(downloader, test_manga):
     chapter = test_manga.chapters[0]
     page = chapter.pages[0]
     downloader.download_manga(test_manga)
-    chapter_dir = os.path.join(TEST_DATA_DIR, test_manga.title, str(chapter.number))
-    page_file = downloader._build_page_filepath(chapter_dir, page)
+    page_file = downloader._build_page_filepath(page)
     assert os.stat(page_file).st_size > 0

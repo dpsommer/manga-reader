@@ -17,25 +17,30 @@ class Downloader(object):
 
     def download_manga(self, manga: Manga):
         for chapter in manga.chapters:
-            self.chapter_dir = os.path.join(self.manga_home, manga.title, str(chapter.number))
+            self._build_chapter_dirpath(manga, chapter)
             if not os.path.exists(self.chapter_dir):
-                self.download_chapter(chapter)
+                self.download_chapter(manga, chapter)
 
-    def download_chapter(self, chapter: Chapter):
+    def _build_chapter_dirpath(self, manga, chapter):
+        self.chapter_dir = os.path.join(self.manga_home, manga.title, str(chapter.number))
+
+    def download_chapter(self, manga: Manga, chapter: Chapter):
         if not self.chapter_dir:
-            raise Exception("No directory specified to download chapter!")
+            self._build_chapter_dirpath(manga, chapter)
         os.makedirs(self.chapter_dir, exist_ok=True)
         for page in chapter.pages:
-            self.download_page(page)
+            self._download_page(page)
 
-    def download_page(self, page: Page):
-        filepath = self._build_page_filepath(self.chapter_dir, page)
+    def _download_page(self, page: Page):
+        filepath = self._build_page_filepath(page)
         self._stream_remote_image(page.image_url, filepath)
 
-    def _build_page_filepath(self, directory, page):
+    def _build_page_filepath(self, page):
+        if not self.chapter_dir:
+            raise Exception("No ")
         filetype = page.image_url.split('.')[-1]
         filename = f'{page.number}.{filetype}'
-        return os.path.join(directory, filename)
+        return os.path.join(self.chapter_dir, filename)
 
     def _stream_remote_image(self, url, filepath):
         stream = requests.get(url, stream=True)
