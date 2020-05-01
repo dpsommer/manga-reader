@@ -57,6 +57,10 @@ def test_get_manga_object(mocker, mangareader):
     ]
 
 
+def test_source_is_singleton(mangareader):
+    assert mangareader == MangaReader()
+
+
 def test_get_chapters(mangareader):
     chapters = mangareader.get_chapters(MANGA_TITLE)
     chapters = [chapter.number for chapter in chapters]
@@ -79,11 +83,11 @@ def test_parse_manga_properties(mangareader):
     parser = MangaReaderDocumentParser()
     document = parser.parse(MANGA_TITLE)
     assert document == {
-        'title': b'Fuuka',
-        'author': b'seo kouji',
-        'artist': b'seo kouji',
-        'description': b'Yuu Haruna just moved into town and love to be on twitter. Out on his way to buy dinner he bumps into a mysterious girl, Fuuka Akitsuki, who breaks his phone thinking he was trying to take a picture of her panties. How will his new life change now?',
-        'tags': b'School Life,Shoujo',
+        'title': 'Fuuka',
+        'author': 'seo kouji',
+        'artist': 'seo kouji',
+        'description': 'Yuu Haruna just moved into town and love to be on twitter. Out on his way to buy dinner he bumps into a mysterious girl, Fuuka Akitsuki, who breaks his phone thinking he was trying to take a picture of her panties. How will his new life change now?',
+        'tags': 'School Life,Shoujo',
         'completed': False
     }
 
