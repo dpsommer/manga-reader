@@ -13,33 +13,26 @@ class MangaSchema(SchemaClass):
 
 class Manga(object):
 
-    def __init__(self,
-                 title: str, chapters=[],
-                 author='', artist='', description='',
-                 tags=[], completed=False):
+    def __init__(self, title: str, chapters=[]):
         self.title = title
         self.chapters = chapters
-        self.author = author
-        self.artist = artist
-        self.description = description
-        self.tags = tags
-        self.completed = completed
 
-    def as_document(self):
+    @staticmethod
+    def document(**kwargs):
         return {
-            'title': self.title.encode(),
-            'author': self.author.encode(),
-            'artist': self.artist.encode(),
-            'description': self.description.encode(),
-            'tags': ','.join(self.tags).encode(),
-            'completed': self.completed
+            'title': kwargs["title"].encode(),
+            'author': kwargs["author"].encode(),
+            'artist': kwargs["artist"].encode(),
+            'description': kwargs["description"].encode(),
+            'tags': ','.join(kwargs["tags"]).encode(),
+            'completed': kwargs["completed"]
         }
 
 
 class Chapter(object):
 
     def __init__(self, number, pages=[]):
-        self.number = number
+        self.number = int(number)
         self.pages = pages
 
     def __eq__(self, o):
@@ -49,7 +42,7 @@ class Chapter(object):
 class Page(object):
 
     def __init__(self, number, image_url):
-        self.number = number
+        self.number = int(number)
         self.image_url = image_url
 
     def __eq__(self, o):

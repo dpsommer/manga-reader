@@ -3,7 +3,7 @@ import re
 import requests
 
 from .source import Source
-from ..manga import Manga
+from ..manga import Manga, Chapter, Page
 
 
 class MangaReader(Source):
@@ -16,8 +16,26 @@ class MangaReader(Source):
         resp.raise_for_status()
         titles = self._parse_manga_list(resp.text)
         parser = MangaReaderDocumentParser()
-        documents = [parser.parse(title) for title in titles]
-        return [Manga(**document) for document in documents if document]
+        return [document for document in [parser.parse(title) for title in titles] if document]
+
+    def get_chapters(self, title):
+        url = f"{self.BASE_URL}/{title}"
+        resp = requests.get(url)
+        resp.raise_for_status()
+        pattern = 'href="\\/{}\\/([\\d.]+)"'.format(title)
+        chapters = re.findall(pattern, resp.text)
+        return [Chapter(chapter, pages=self.get_pages(title, chapter)) for chapter in chapters]
+
+    def get_pages(self, title, chapter):
+        pages = range(1, self._get_page_count(title, chapter) + 1)
+        return [Page(page, self._get_page_url(title, chapter, page)) for page in pages]
+
+    def _get_page_count(self, title, chapter):
+        url = f"{self.BASE_URL}/{title}/{chapter}"
+        resp = requests.get(url)
+        resp.raise_for_status()
+        match = re.search(r'select>\s+of\s+(\d+)', resp.text)
+        return int(match[1])
 
     def _get_page_url(self, title, chapter, page):
         url = f"{self.BASE_URL}/{title}/{chapter}"
@@ -27,24 +45,6 @@ class MangaReader(Source):
         resp.raise_for_status()
         match = re.search(r'id="img".+?src="(.*?)"\s+alt', resp.text)
         return match[1]
-
-    def _get_pages(self, title, chapter):
-        return [page for page in range(1, self._get_page_count(title, chapter) + 1)]
-
-    def _get_page_count(self, title, chapter):
-        url = f"{self.BASE_URL}/{title}/{chapter}"
-        resp = requests.get(url)
-        resp.raise_for_status()
-        match = re.search(r'select>\s+of\s+(\d+)', resp.text)
-        return int(match[1])
-
-    def _get_chapters(self, title):
-        url = f"{self.BASE_URL}/{title}"
-        resp = requests.get(url)
-        resp.raise_for_status()
-        pattern = 'href="\\/{}\\/([\\d.]+)"'.format(title)
-        for chapter in re.findall(pattern, resp.text):
-            yield chapter
 
     def _get_manga_list_url(self):
         return f"{self.BASE_URL}/alphabetical"
@@ -65,14 +65,14 @@ class MangaReaderDocumentParser(object):
         try:
             self._get_page_content(title)
             title = self._parse_title()
-            return {
-                "title": title,
-                "author": self._parse_author(),
-                "artist": self._parse_artist(),
-                "description": self._parse_description(),
-                "tags": self._parse_tags(),
-                "completed": self._parse_completion_status()
-            }
+            return Manga.document(
+                title=title,
+                author=self._parse_author(),
+                artist=self._parse_artist(),
+                description=self._parse_description(),
+                tags=self._parse_tags(),
+                completed=self._parse_completion_status()
+            )
         except Exception as e:
             print(self.page_content)
             print(str(e))  # log what went wrong, but keep parsing

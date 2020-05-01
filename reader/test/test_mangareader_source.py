@@ -41,17 +41,16 @@ def mangareader():
 def test_get_manga_object(mocker, mangareader):
     mocker.patch('reader.sources.MangaReader._get_page_count', return_value=2)
     manga = mangareader.get_manga(MANGA_TITLE)
-    assert type(manga) == Manga
     assert manga.chapters == [
-        Chapter("152", [
+        Chapter(152, [
             Page(1, 'https://i5.imggur.net/fuuka/2/fuuka-4798605.jpg'),
             Page(2, 'https://i5.imggur.net/fuuka/2/fuuka-4798607.jpg')
         ]),
-        Chapter("1", [
+        Chapter(1, [
             Page(1, 'https://i5.imggur.net/fuuka/2/fuuka-4798605.jpg'),
             Page(2, 'https://i5.imggur.net/fuuka/2/fuuka-4798607.jpg')
         ]),
-        Chapter("2", [
+        Chapter(2, [
             Page(1, 'https://i5.imggur.net/fuuka/2/fuuka-4798605.jpg'),
             Page(2, 'https://i5.imggur.net/fuuka/2/fuuka-4798607.jpg')
         ])
@@ -59,8 +58,9 @@ def test_get_manga_object(mocker, mangareader):
 
 
 def test_get_chapters(mangareader):
-    chapters = [chapter for chapter in mangareader._get_chapters(MANGA_TITLE)]
-    assert chapters == ['152', '1', '2']
+    chapters = mangareader.get_chapters(MANGA_TITLE)
+    chapters = [chapter.number for chapter in chapters]
+    assert chapters == [152, 1, 2]
 
 
 def test_get_page_count(mangareader):
@@ -79,11 +79,11 @@ def test_parse_manga_properties(mangareader):
     parser = MangaReaderDocumentParser()
     document = parser.parse(MANGA_TITLE)
     assert document == {
-        'title': 'Fuuka',
-        'author': 'seo kouji',
-        'artist': 'seo kouji',
-        'description': 'Yuu Haruna just moved into town and love to be on twitter. Out on his way to buy dinner he bumps into a mysterious girl, Fuuka Akitsuki, who breaks his phone thinking he was trying to take a picture of her panties. How will his new life change now?',
-        'tags': ['School Life', 'Shoujo'],
+        'title': b'Fuuka',
+        'author': b'seo kouji',
+        'artist': b'seo kouji',
+        'description': b'Yuu Haruna just moved into town and love to be on twitter. Out on his way to buy dinner he bumps into a mysterious girl, Fuuka Akitsuki, who breaks his phone thinking he was trying to take a picture of her panties. How will his new life change now?',
+        'tags': b'School Life,Shoujo',
         'completed': False
     }
 
