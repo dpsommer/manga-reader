@@ -5,11 +5,9 @@ from whoosh.index import create_in, open_dir, exists_in
 from whoosh.qparser import QueryParser
 
 from ..manga import MangaSchema
-from ..sources import SourceFactory
 from ..utils import ROOT_DIRECTORY
 
 INDEX_DIRECTORY = os.path.join(ROOT_DIRECTORY, 'index')
-ALL_SOURCES = ['mangareader']
 
 
 class SearchEngine(object):
@@ -31,11 +29,6 @@ class SearchEngine(object):
             return open_dir(index_path, indexname=index_name)
         os.makedirs(index_path, exist_ok=True)
         return create_in(index_path, self._schema, indexname=index_name)
-
-    def full_index(self, sources=ALL_SOURCES):
-        for source in sources:
-            documents = SourceFactory.instance(source).crawl()
-            self.index(documents)
 
     def search(self, search_string: str) -> list:
         results = []
