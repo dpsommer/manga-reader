@@ -94,9 +94,17 @@ def index():
 @pytest.fixture
 def search_engine(mocker, index, manga_documents):
     mocker.patch('reader.search.search_engine.SearchEngine._load_index', return_value=index)
+    mocker.patch('reader.search.search_engine.SearchEngine._initialize_index')
     search_engine = SearchEngine()
     search_engine.index(manga_documents)
     return search_engine
+
+
+def test_index_initialization(mocker, index, manga_documents):
+    mocker.patch('reader.sources.mangareader.MangaReader.crawl', return_value=manga_documents)
+    mocker.patch('reader.search.search_engine.create_in', return_value=index)
+    search_engine = SearchEngine()
+    assert not search_engine._index.is_empty()
 
 
 def test_exact_match_search(search_engine):
