@@ -20,11 +20,11 @@ class Manga(object):
     @staticmethod
     def document(**kwargs):
         return {
-            'title': kwargs["title"].encode(),
-            'author': kwargs["author"].encode(),
-            'artist': kwargs["artist"].encode(),
-            'description': kwargs["description"].encode(),
-            'tags': ','.join(kwargs["tags"]).encode(),
+            'title': kwargs["title"],
+            'author': kwargs["author"],
+            'artist': kwargs["artist"],
+            'description': kwargs["description"],
+            'tags': ','.join(kwargs["tags"]),
             'completed': kwargs["completed"]
         }
 
