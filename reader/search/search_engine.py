@@ -5,9 +5,11 @@ from whoosh.index import create_in, open_dir, exists_in
 from whoosh.qparser import QueryParser
 
 from ..manga import MangaSchema
+from ..sources import SourceFactory
 from ..utils import ROOT_DIRECTORY
 
 INDEX_DIRECTORY = os.path.join(ROOT_DIRECTORY, 'index')
+ALL_SOURCES = ['mangareader']
 
 
 class SearchEngine(object):
@@ -18,6 +20,7 @@ class SearchEngine(object):
 
     def index(self, data) -> None:
         # NB: consider using multisegment=True here for initial indexing
+        # Not using procs to multithread as it breaks RamStorage (used in tests)
         w = self._index.writer(limitmb=512)
         for document in data:
             w.add_document(**document)
@@ -26,7 +29,13 @@ class SearchEngine(object):
     def _load_index(self, index_name):
         if exists_in(INDEX_DIRECTORY, indexname=index_name):
             return open_dir(INDEX_DIRECTORY, indexname=index_name)
+        self._initialize_index()
         return create_in(INDEX_DIRECTORY, self._schema, indexname=index_name)
+
+    def _initialize_index(self, sources=ALL_SOURCES):
+        for source in sources:
+            documents = SourceFactory.instance(source).crawl()
+            self.index(documents)
 
     def search(self, search_string: str) -> list:
         results = []
