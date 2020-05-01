@@ -1,5 +1,4 @@
 import os
-import shutil
 
 import pytest
 from requests_mock import ANY
@@ -7,8 +6,8 @@ from requests_mock import ANY
 from ..utils import Downloader
 from ..sources import MangaReader
 from ..manga import Manga, Chapter, Page
+from .common import DIRPATH, clean_tree
 
-DIRPATH = os.path.abspath(os.path.dirname(__file__))
 TEST_DATA_DIR = os.path.join(DIRPATH, 'test_downloads')
 IMAGE_URL = 'https://example.com/123.jpg'
 
@@ -26,17 +25,7 @@ def test_manga():
 @pytest.fixture
 def downloader(mocker):
     yield Downloader(manga_home=TEST_DATA_DIR)
-    if os.path.isdir(TEST_DATA_DIR):
-        for filename in os.listdir(TEST_DATA_DIR):  # teardown
-            file_path = os.path.join(TEST_DATA_DIR, filename)
-            try:
-                if os.path.isfile(file_path) or os.path.islink(file_path):
-                    os.unlink(file_path)
-                elif os.path.isdir(file_path):
-                    shutil.rmtree(file_path)
-            except Exception as e:
-                print('Failed to delete %s. Reason: %s' % (file_path, e))
-        os.rmdir(TEST_DATA_DIR)
+    clean_tree(TEST_DATA_DIR)
 
 
 def test_download_manga(mocker, requests_mock, downloader, test_manga):

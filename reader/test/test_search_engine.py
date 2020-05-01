@@ -1,11 +1,16 @@
+import os
+
 import pytest
 from whoosh.filedb.filestore import RamStorage
 
 from ..manga import MangaSchema
 from ..search import SearchEngine
+from .common import DIRPATH, clean_tree
+
+TEST_INDEX_DIR = os.path.join(DIRPATH, 'test_index')
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def manga_documents():
     return [
         {
@@ -92,22 +97,43 @@ def index():
 
 
 @pytest.fixture
-def search_engine(mocker, index, manga_documents):
+def mock_search_engine(mocker, index, manga_documents):
     mocker.patch('reader.search.search_engine.SearchEngine._load_index', return_value=index)
-    mocker.patch('reader.search.search_engine.SearchEngine._initialize_index')
     search_engine = SearchEngine()
     search_engine.index(manga_documents)
     return search_engine
+
+
+@pytest.mark.functional
+@pytest.fixture(scope='module')
+def search_engine(manga_documents):
+    search_engine = SearchEngine(index_path=TEST_INDEX_DIR)
+    search_engine.index(manga_documents)
+    yield search_engine
+    clean_tree(TEST_INDEX_DIR)
 
 
 def test_index_initialization(mocker, index, manga_documents):
     mocker.patch('reader.sources.mangareader.MangaReader.crawl', return_value=manga_documents)
     mocker.patch('reader.search.search_engine.create_in', return_value=index)
     search_engine = SearchEngine()
+    search_engine.full_index()
     assert not search_engine._index.is_empty()
 
 
-def test_exact_match_search(search_engine):
-    results = search_engine.search('Junjou')
+def test_exact_match_search(mock_search_engine):
+    results = mock_search_engine.search('Junjou')
     assert results[0]['title'] == 'Junjou Drop'
     assert len(results) == 2
+
+
+@pytest.mark.functional
+def test_load_index(search_engine):
+    se = SearchEngine(index_path=TEST_INDEX_DIR)
+    assert se._index.doc_count() == search_engine._index.doc_count()
+
+
+@pytest.mark.functional
+def test_search_filesystem_index(search_engine):
+    results = search_engine.search('Junjou')
+    assert results[0]['title'] == 'Junjou Drop'

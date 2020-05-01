@@ -14,10 +14,9 @@ ALL_SOURCES = ['mangareader']
 
 class SearchEngine(object):
 
-    def __init__(self, index_name='default', schema=None):
+    def __init__(self, index_path=INDEX_DIRECTORY, index_name='default', schema=None):
         self._schema = schema or MangaSchema
-        self._index = self._load_index(index_name)
-        self._initialize_index()
+        self._index = self._load_index(index_path, index_name)
 
     def index(self, data) -> None:
         # NB: consider using multisegment=True here for initial indexing
@@ -27,12 +26,13 @@ class SearchEngine(object):
             w.add_document(**document)
         w.commit()
 
-    def _load_index(self, index_name):
-        if exists_in(INDEX_DIRECTORY, indexname=index_name):
-            return open_dir(INDEX_DIRECTORY, indexname=index_name)
-        return create_in(INDEX_DIRECTORY, self._schema, indexname=index_name)
+    def _load_index(self, index_path, index_name):
+        if exists_in(index_path, indexname=index_name):
+            return open_dir(index_path, indexname=index_name)
+        os.makedirs(index_path, exist_ok=True)
+        return create_in(index_path, self._schema, indexname=index_name)
 
-    def _initialize_index(self, sources=ALL_SOURCES):
+    def full_index(self, sources=ALL_SOURCES):
         for source in sources:
             documents = SourceFactory.instance(source).crawl()
             self.index(documents)
