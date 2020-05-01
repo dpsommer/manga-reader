@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import click
+
+from reader.exceptions import NoSuchSource
+from reader.search import SearchEngine
+from reader.sources import SourceFactory, MangaReader
+from reader.utils import Downloader
+
+DEFAULT_SOURCE = 'mangareader'
+
+
+@click.group()
+def cli():
+    pass
+
+
+@click.command()
+@click.argument('query')
+@click.option('-s', '--source')
+def search(query, source):
+    search_engine = SearchEngine()
+    results = search_engine.search('Junjou')
+    for result in results:
+        click.echo(result)
+
+
+@click.command()
+@click.argument('title')
+@click.option('-s', '--source')
+@click.option('-c', '--chapter')
+def download(title, source, chapter):
+    try:
+        downloader = Downloader()
+        source = SourceFactory.instance(source or DEFAULT_SOURCE)
+        manga = source.get_manga(title)
+        if chapter:
+            downloader.download_chapter(manga, chapter)
+            click.echo(f'Finished downloading "{manga.title}" chapter #{chapter.number}')
+        else:
+            downloader.download_manga(manga)
+            click.echo(f'Finished downloading all chapters of "{manga.title}"')
+    except NoSuchSource as e:
+        click.echo(f"Encountered an error: {str(e)} for given source '{source}'")
+
+
+@click.command()
+def read():
+    pass
+
+
+@click.command()
+def version():
+    with open('version', 'r') as f:
+        click.echo(f"Version {f.read()}")
+
+cli.add_command(search)
+cli.add_command(download)
+cli.add_command(read)
+cli.add_command(version)
+
+
+if __name__ == '__main__':
+    cli()
