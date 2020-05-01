@@ -9,6 +9,12 @@ venv/
 .coverage
 .pytest_cache/
 
+# setuptools
+
+build/
+dist/
+*.egg-info/
+
 # IDEs
 .vscode/
 
