@@ -17,13 +17,27 @@ class Source(ABC):
         return Manga(title, self.get_chapters(title))
 
     @abstractmethod
-    def crawl(self):
-        pass
-
-    @abstractmethod
     def get_chapters(self, title):
         pass
 
     @abstractmethod
     def get_pages(self, title, chapter):
+        pass
+
+    def crawl(self):
+        manga_list = self._get_manga_list()
+        titles = self._parse_manga_list(manga_list)
+        return self._get_indexable_documents_from_source(titles)
+
+    @abstractmethod
+    def _get_manga_list(self):
+        pass
+
+
+    @abstractmethod
+    def _parse_manga_list(self, page_content):
+        pass
+
+    @abstractmethod
+    def _get_indexable_documents_from_source(self, titles):
         pass

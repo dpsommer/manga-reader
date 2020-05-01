@@ -38,15 +38,11 @@ class MangaReader(Source):
         match = re.search(r'id="img".+?src="(.*?)"\s+alt', resp.text)
         return match[1]
 
-    def crawl(self):
-        list_url = self._get_manga_list_url()
+    def _get_manga_list(self):
+        list_url = f"{self.BASE_URL}/alphabetical"
         resp = requests.get(list_url)
         resp.raise_for_status()
-        titles = self._parse_manga_list(resp.text)
-        return self._parse_title_list(titles)
-
-    def _get_manga_list_url(self):
-        return f"{self.BASE_URL}/alphabetical"
+        return resp.text
 
     def _parse_manga_list(self, page_content):
         # lstrip the page header and content before the series list
@@ -54,7 +50,7 @@ class MangaReader(Source):
         pattern = r'<li>\s*<a href="\/([\w\d-]+)">.+?<\/a>'
         return re.findall(pattern, page_content)
 
-    def _parse_title_list(self, titles):
+    def _get_indexable_documents_from_source(self, titles):
         parser = MangaReaderDocumentParser()
         documents = []
         for title in titles:
