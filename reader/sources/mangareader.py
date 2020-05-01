@@ -10,14 +10,6 @@ class MangaReader(Source):
 
     BASE_URL = 'http://www.mangareader.net'
 
-    def crawl(self):
-        list_url = self._get_manga_list_url()
-        resp = requests.get(list_url)
-        resp.raise_for_status()
-        titles = self._parse_manga_list(resp.text)
-        parser = MangaReaderDocumentParser()
-        return [document for document in [parser.parse(title) for title in titles] if document]
-
     def get_chapters(self, title):
         url = f"{self.BASE_URL}/{title}"
         resp = requests.get(url)
@@ -46,6 +38,13 @@ class MangaReader(Source):
         match = re.search(r'id="img".+?src="(.*?)"\s+alt', resp.text)
         return match[1]
 
+    def crawl(self):
+        list_url = self._get_manga_list_url()
+        resp = requests.get(list_url)
+        resp.raise_for_status()
+        titles = self._parse_manga_list(resp.text)
+        return self._parse_title_list(titles)
+
     def _get_manga_list_url(self):
         return f"{self.BASE_URL}/alphabetical"
 
@@ -55,6 +54,17 @@ class MangaReader(Source):
         pattern = r'<li>\s*<a href="\/([\w\d-]+)">.+?<\/a>'
         return re.findall(pattern, page_content)
 
+    def _parse_title_list(self, titles):
+        parser = MangaReaderDocumentParser()
+        documents = []
+        for title in titles:
+            try:
+                document = parser.parse(title)
+                documents.append(document)
+            except Exception as e:
+                print(str(e))
+        return documents
+
 
 class MangaReaderDocumentParser(object):
 
@@ -62,20 +72,16 @@ class MangaReaderDocumentParser(object):
         self.page_content = None
 
     def parse(self, title):
-        try:
-            self._get_page_content(title)
-            title = self._parse_title()
-            return Manga.document(
-                title=title,
-                author=self._parse_author(),
-                artist=self._parse_artist(),
-                description=self._parse_description(),
-                tags=self._parse_tags(),
-                completed=self._parse_completion_status()
-            )
-        except Exception as e:
-            print(self.page_content)
-            print(str(e))  # log what went wrong, but keep parsing
+        self._get_page_content(title)
+        title = self._parse_title()
+        return Manga.document(
+            title=title,
+            author=self._parse_author(),
+            artist=self._parse_artist(),
+            description=self._parse_description(),
+            tags=self._parse_tags(),
+            completed=self._parse_completion_status()
+        )
 
     def _get_page_content(self, title):
         resp = requests.get(f'{MangaReader.BASE_URL}/{title}')
