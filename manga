@@ -5,7 +5,7 @@ import click
 
 from reader.exceptions import NoSuchSource
 from reader.search import SearchEngine
-from reader.sources import SourceFactory, MangaReader
+from reader.sources import SourceFactory, SOURCES
 from reader.utils import Downloader
 
 DEFAULT_SOURCE = 'mangareader'
@@ -18,10 +18,25 @@ def cli():
 
 @click.command()
 @click.argument('query')
-@click.option('-s', '--source')
-def search(query, source):
+def search(query):
     search_engine = SearchEngine()
-    results = search_engine.search('Junjou')
+    if search_engine._index.is_empty():
+        click.echo("Missing or empty manga index. Rebuilding index for all sources.")
+        for source_class in SOURCES:
+            source = SourceFactory.instance(source_class)
+            manga = source.get_manga_list()
+            click.echo(f"Collecting all manga from {source_class.__name__}...")
+            indexable_documents = []
+            with click.progressbar(length=len(manga)) as bar:
+                for document in source.generate_indexable_documents(manga):
+                    bar.update(1)
+                    indexable_documents.append(document)
+            click.echo(f"Found {len(indexable_documents)} manga.")
+            click.echo(f"Building {source_class.__name__} index...")
+            with click.progressbar(indexable_documents) as bar:
+                search_engine.index(bar)
+            click.echo("Done.")
+    results = search_engine.search(query)
     for result in results:
         click.echo(result)
 

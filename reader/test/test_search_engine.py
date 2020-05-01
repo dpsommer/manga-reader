@@ -99,7 +99,7 @@ def index():
 @pytest.fixture
 def mock_search_engine(mocker, index, manga_documents):
     mocker.patch('reader.search.search_engine.SearchEngine._load_index', return_value=index)
-    search_engine = SearchEngine()
+    search_engine = SearchEngine(index_path=TEST_INDEX_DIR)
     search_engine.index(manga_documents)
     return search_engine
 

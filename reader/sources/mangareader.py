@@ -9,20 +9,23 @@ from ..manga import Manga, Chapter, Page
 class MangaReaderDocumentParser(DocumentParser):
 
     def _get_page_content(self, title):
-        resp = requests.get(f'{MangaReader.BASE_URL}/{title}')
+        resp = requests.get(self.context.url or self._get_url(title))
         resp.raise_for_status()
         return resp.text
 
+    def _get_url(self, title):
+        return f'{MangaReader.BASE_URL}/{title}'
+
     def _parse_title(self):
-        return re.search(r'<h2\s+class="aname">(.+?)<\/h2>', self.page_content)[1].strip()
+        return re.search(r'<h2\s+class="aname">(.+?)<\/h2>', self.context.page_content)[1].strip()
 
     def _parse_author(self):
-        author = re.search(r'<td\s+class="propertytitle">Author:<\/td>\s+<td>(.*?)<\/td>', self.page_content)[1]
+        author = re.search(r'<td\s+class="propertytitle">Author:<\/td>\s+<td>(.*?)<\/td>', self.context.page_content)[1]
         author = self._sanitize_author_or_artist_field(author)
         return author.strip()
 
     def _parse_artist(self):
-        artist = re.search(r'<td\s+class="propertytitle">Artist:<\/td>\s+<td>(.*?)<\/td>', self.page_content)[1]
+        artist = re.search(r'<td\s+class="propertytitle">Artist:<\/td>\s+<td>(.*?)<\/td>', self.context.page_content)[1]
         artist = self._sanitize_author_or_artist_field(artist)
         return artist.strip()
 
@@ -32,15 +35,16 @@ class MangaReaderDocumentParser(DocumentParser):
         return field.lower().strip()
 
     def _parse_description(self):
-        description = re.search(r'<div\s+id="readmangasum">[\s\S]*?<p>([\s\S]*?)<\/p>', self.page_content)[1]
+        description = re.search(r'<div\s+id="readmangasum">[\s\S]*?<p>([\s\S]*?)<\/p>', self.context.page_content)[1]
         description = re.sub(r'\s{2,}', ' ', description)
         return description.strip()
 
     def _parse_tags(self):
-        return re.findall(r'<span\s+class="genretags">([\w\s-]+)<\/span>', self.page_content)
+        tags = re.findall(r'<span\s+class="genretags">([\w\s-]+)<\/span>', self.context.page_content)
+        return ','.join(tags)
 
     def _parse_completion_status(self):
-        completed = re.search(r'<td\s+class="propertytitle">Status:<\/td>\s*<td>(\w*?)<\/td>', self.page_content)[1]
+        completed = re.search(r'<td\s+class="propertytitle">Status:<\/td>\s*<td>(\w*?)<\/td>', self.context.page_content)[1]
         return completed.lower() == 'completed'
 
 
@@ -76,11 +80,11 @@ class MangaReader(Source):
         match = re.search(r'id="img".+?src="(.*?)"\s+alt', resp.text)
         return match[1]
 
-    def _get_manga_list(self):
+    def get_manga_list(self):
         list_url = f"{self.BASE_URL}/alphabetical"
         resp = requests.get(list_url)
         resp.raise_for_status()
-        return resp.text
+        return self._parse_manga_list(resp.text)
 
     def _parse_manga_list(self, page_content):
         # lstrip the page header and content before the series list
@@ -88,5 +92,5 @@ class MangaReader(Source):
         pattern = r'<li>\s*<a href="\/([\w\d-]+)">.+?<\/a>'
         return re.findall(pattern, page_content)
 
-    def _get_document_parser(self):
-        return MangaReaderDocumentParser()
+    def _get_document_parser(self, context):
+        return MangaReaderDocumentParser(context)

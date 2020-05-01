@@ -1,5 +1,6 @@
 import os
 import re
+import threading
 
 import pytest
 
@@ -80,7 +81,7 @@ def test_get_image_url_for_nth_page(mangareader):
 
 
 def test_parse_manga_properties(mangareader):
-    parser = MangaReaderDocumentParser()
+    parser = MangaReaderDocumentParser(threading.local())
     document = parser.parse(MANGA_TITLE)
     assert document == {
         'title': 'Fuuka',
@@ -88,7 +89,8 @@ def test_parse_manga_properties(mangareader):
         'artist': 'seo kouji',
         'description': 'Yuu Haruna just moved into town and love to be on twitter. Out on his way to buy dinner he bumps into a mysterious girl, Fuuka Akitsuki, who breaks his phone thinking he was trying to take a picture of her panties. How will his new life change now?',
         'tags': 'School Life,Shoujo',
-        'completed': False
+        'completed': False,
+        'url': 'http://www.mangareader.net/fuuka'
     }
 
 

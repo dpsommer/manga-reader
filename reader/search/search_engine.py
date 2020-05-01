@@ -30,12 +30,12 @@ class SearchEngine(object):
         os.makedirs(index_path, exist_ok=True)
         return create_in(index_path, self._schema, indexname=index_name)
 
-    def search(self, search_string: str) -> list:
+    def search(self, search_string: str, results_count=10) -> list:
         results = []
         with self._index.searcher() as searcher:
             parser = QueryParser("title", self._index.schema)
             query = parser.parse(search_string.encode())
-            search_results = searcher.search(query)
+            search_results = searcher.search(query, limit=results_count)
             for result in search_results:
                 results.append(dict(result))
         return results

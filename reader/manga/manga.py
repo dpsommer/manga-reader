@@ -17,17 +17,6 @@ class Manga(object):
         self.title = title
         self.chapters = chapters
 
-    @staticmethod
-    def document(**kwargs):
-        return {
-            'title': kwargs["title"],
-            'author': kwargs["author"],
-            'artist': kwargs["artist"],
-            'description': kwargs["description"],
-            'tags': ','.join(kwargs["tags"]),
-            'completed': kwargs["completed"]
-        }
-
 
 class Chapter(object):
 
