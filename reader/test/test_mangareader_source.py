@@ -5,7 +5,7 @@ import threading
 import pytest
 
 from ..manga import Manga, Chapter, Page
-from ..sources.mangareader import MangaReader, MangaReaderDocumentParser, BASE_URL
+from ..sources.mangareader import MangaReader, BASE_URL
 
 MANGA_TITLE = 'fuuka'
 CHAPTER = 2
@@ -85,7 +85,7 @@ def test_get_image_url_for_nth_page(scraper):
 
 
 def test_parse_manga_properties(mangareader):
-    parser = MangaReaderDocumentParser(threading.local())
+    parser = mangareader.get_document_parser(threading.local())
     document = parser.parse(MANGA_TITLE)
     assert document == {
         'title': 'Fuuka',
