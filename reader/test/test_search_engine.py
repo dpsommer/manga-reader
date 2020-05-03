@@ -119,6 +119,32 @@ def test_exact_match_search(mock_search_engine):
     assert len(results) == 2
 
 
+def test_search_by_artist(mock_search_engine):
+    results = mock_search_engine.search('artist:itou')
+    assert results[0]['title'] == "Ito Junji's Cat Diary"
+
+
+def test_search_by_author(mock_search_engine):
+    results = mock_search_engine.search('author:"yoshikawa eiji"')
+    assert results[0]['title'] == 'Vagabond'
+
+
+def test_tag_search(mock_search_engine):
+    results = mock_search_engine.search('tags:seinen')
+    assert len(results) == 3
+
+
+def test_multiple_tag_search(mock_search_engine):
+    results = mock_search_engine.search('tags:seinen,comedy')
+    assert results[0]['title'] == "Ito Junji's Cat Diary"
+
+
+def test_search_description(mock_search_engine):
+    results = mock_search_engine.search('description:delinquent')
+    assert results[0]['title'] == 'Junjou Drop'
+    assert len(results) == 2
+
+
 @pytest.mark.functional
 def test_load_index(search_engine):
     se = SearchEngine(index_path=TEST_INDEX_DIR)
