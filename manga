@@ -77,13 +77,14 @@ def download(title, source, chapter, force):
     try:
         downloader = Downloader()
         source = SourceFactory.instance(source or DEFAULT_SOURCE)
-        click.echo(f"Downloading {title} from {source.__class__.__name__}.")
         scraper = source.get_scraper(title)
         if chapter:
+            click.echo(f"Downloading {title} chapter {chapter} from {source.__class__.__name__}.")
             pages = scraper.get_pages(chapter)
             downloader.download_chapter(title, Chapter(chapter, pages=pages), force=force)
-            click.echo(f'Finished downloading "{title}" chapter #{chapter.number}')
+            click.echo(f'Finished downloading "{title}" chapter #{chapter}')
         else:
+            click.echo(f"Downloading {title} from {source.__class__.__name__}.")
             click.echo(f"Gathering links to all chapters and images...")
             chapter_list = scraper.get_chapters()
             chapters = []
@@ -109,8 +110,8 @@ def download(title, source, chapter, force):
                         chapter = futures[future]
                         failed_chapters.append(chapter.number)
         for chapter in failed_chapters:
-            click.echo(f'Aborting download of chapter {chapter}: some pages could not be downloaded.')
-            click.echo('Please try redownloading this chapter individually.')
+            click.echo(f'Download of chapter {chapter} failed mid-way: some pages could not be downloaded.')
+            click.echo('Please try redownloading this chapter with the --force flag.')
         click.echo(f'Finished downloading all chapters of "{manga.title}"')
     except NoSuchSource as e:
         click.echo(f"Encountered an error: {str(e)} for given source '{source}'")
