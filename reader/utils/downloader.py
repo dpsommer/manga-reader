@@ -21,7 +21,7 @@ class Downloader(object):
 
     def download_chapter(self, title, chapter: Chapter, force=False):
         dirpath = os.path.join(self.manga_home, title)
-        return self._ChapterDownloader(dirpath, chapter).download(force)
+        self._ChapterDownloader(dirpath, chapter).download(force)
 
     class _ChapterDownloader(object):
 
@@ -33,13 +33,8 @@ class Downloader(object):
             if os.path.exists(self.chapter_dir) and not force:
                 return ()  # chapter exists on disk, skip
             os.makedirs(self.chapter_dir, exist_ok=True)
-            failed_pages = []
             for page in self.chapter.pages:
-                try:
-                    self._download_page(page)
-                except Exception:
-                    failed_pages.append(page)
-            return (self.chapter.number, failed_pages) if failed_pages else ()
+                self._download_page(page)
 
         def _download_page(self, page: Page):
             filepath = self._build_page_filepath(page)

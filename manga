@@ -78,14 +78,10 @@ def download(title, source, chapter, force):
         downloader = Downloader()
         source = SourceFactory.instance(source or DEFAULT_SOURCE)
         click.echo(f"Downloading {title} from {source.__class__.__name__}.")
-        failed_pages = []
         if chapter:
             pages = source.get_pages(title, chapter)
-            manga = Manga(title, chapters=[Chapter(chapter, pages=pages)])
-            failed = downloader.download_chapter(manga, chapter, force=force)
-            if failed:
-                failed_pages.append(failed)
-            click.echo(f'Finished downloading "{manga.title}" chapter #{chapter.number}')
+            downloader.download_chapter(title, Chapter(chapter, pages=pages), force=force)
+            click.echo(f'Finished downloading "{title}" chapter #{chapter.number}')
         else:
             click.echo(f"Gathering links to all chapters and images...")
             scraper = source.get_scraper(title)
@@ -102,21 +98,19 @@ def download(title, source, chapter, force):
             click.echo("Done.")
             manga = Manga(title, chapters=chapters)
             click.echo("Downloading chapters...")
-            futures = [executor.submit(downloader.download_chapter, manga.title, chapter, force) for chapter in manga.chapters]
+            futures = {executor.submit(downloader.download_chapter, manga.title, chapter, force): chapter for chapter in manga.chapters}
+            failed_chapters = []
             with click.progressbar(length=len(futures)) as bar:
                 for future in as_completed(futures):
                     try:
                         bar.update(1)
-                        failed = future.result()
-                        if failed:
-                            failed_pages.append(failed)
+                        future.result()
                     except Exception:
-                        pass
-        if failed_pages:
-            click.echo(f'The following pages failed to download:')
-            for chapter, failed in failed_pages:
-                click.echo(f"Chapter {chapter}, page(s) {', '.join(failed)}")
-            click.echo(f'Please try redownloading the failed chapters with the --force flag.')
+                        chapter = futures[future]
+                        failed_chapters.append(chapter.number)
+        for chapter in failed_chapters:
+            click.echo(f'Aborting download of chapter {chapter}: some pages could not be downloaded.')
+            click.echo('Please try redownloading this chapter individually.')
         click.echo(f'Finished downloading all chapters of "{manga.title}"')
     except NoSuchSource as e:
         click.echo(f"Encountered an error: {str(e)} for given source '{source}'")
