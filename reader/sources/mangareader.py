@@ -98,7 +98,12 @@ class MangaReaderScraper(Scraper):
 class MangaReader(Source):
 
     def get_scraper(self, title):
-        return MangaReaderScraper(title)
+        return MangaReaderScraper(self.normalize(title))
+
+    @staticmethod
+    def normalize(input_str):
+        output = re.sub('[^A-Za-z0-9 ]+', '', input_str)
+        return output.replace(' ', '-').lower()
 
     def get_manga_list(self):
         list_url = f"{BASE_URL}/alphabetical"

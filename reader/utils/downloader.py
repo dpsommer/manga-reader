@@ -1,5 +1,5 @@
 import os
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import re
 
 import requests
 
@@ -20,8 +20,14 @@ class Downloader(object):
             self.download_chapter(manga.title, chapter, force=force)
 
     def download_chapter(self, title, chapter: Chapter, force=False):
+        title = self.normalize(title)
         dirpath = os.path.join(self.manga_home, title)
         self._ChapterDownloader(dirpath, chapter).download(force)
+
+    @staticmethod
+    def normalize(input_str):
+        output = re.sub('[^A-Za-z0-9 ]+', '', input_str)
+        return output.replace(' ', '-').lower()
 
     class _ChapterDownloader(object):
 

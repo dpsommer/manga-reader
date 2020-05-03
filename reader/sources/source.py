@@ -60,12 +60,7 @@ class DocumentParser(ABC):
 class Scraper(ABC):
 
     def __init__(self, title):
-        self.title = self._normalize(title)
-
-    @staticmethod
-    def _normalize(input_str):
-        output = re.sub('[^A-Za-z0-9 ]+', '', input_str)
-        return output.replace(' ', '-').lower()
+        self.title = title
 
     @abstractmethod
     def get_chapters(self):

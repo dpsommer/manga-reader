@@ -78,13 +78,13 @@ def download(title, source, chapter, force):
         downloader = Downloader()
         source = SourceFactory.instance(source or DEFAULT_SOURCE)
         click.echo(f"Downloading {title} from {source.__class__.__name__}.")
+        scraper = source.get_scraper(title)
         if chapter:
-            pages = source.get_pages(title, chapter)
+            pages = scraper.get_pages(chapter)
             downloader.download_chapter(title, Chapter(chapter, pages=pages), force=force)
             click.echo(f'Finished downloading "{title}" chapter #{chapter.number}')
         else:
             click.echo(f"Gathering links to all chapters and images...")
-            scraper = source.get_scraper(title)
             chapter_list = scraper.get_chapters()
             chapters = []
             futures = {executor.submit(scraper.get_pages, chapter): chapter for chapter in chapter_list}
