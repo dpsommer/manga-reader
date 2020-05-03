@@ -4,7 +4,8 @@ from .source import Source
 from .mangareader import MangaReader, MangaReaderDocumentParser
 from ..exceptions import NoSuchSource
 
-SOURCES = {MangaReader}
+# Sources are singletons, just instantiate them here
+SOURCES = {MangaReader()}
 
 
 class SourceFactory(object):

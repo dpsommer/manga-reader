@@ -8,6 +8,7 @@ from ..manga import MangaSchema
 from ..utils import ROOT_DIRECTORY
 
 INDEX_DIRECTORY = os.path.join(ROOT_DIRECTORY, 'index')
+DEFAULT_RESULT_COUNT = 10
 
 
 class SearchEngine(object):
@@ -30,7 +31,7 @@ class SearchEngine(object):
         os.makedirs(index_path, exist_ok=True)
         return create_in(index_path, self._schema, indexname=index_name)
 
-    def search(self, search_string: str, results_count=10) -> list:
+    def search(self, search_string: str, results_count=DEFAULT_RESULT_COUNT) -> list:
         results = []
         with self._index.searcher() as searcher:
             parser = QueryParser("title", self._index.schema)
