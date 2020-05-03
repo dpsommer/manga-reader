@@ -5,14 +5,14 @@ import threading
 import pytest
 
 from ..manga import Manga, Chapter, Page
-from ..sources import MangaReader, MangaReaderDocumentParser
+from ..sources.mangareader import MangaReader, MangaReaderDocumentParser, BASE_URL
 
 MANGA_TITLE = 'fuuka'
 CHAPTER = 2
 PAGE = 2
 DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data', 'mangareader')
-OVERVIEW_URL = f"{MangaReader.BASE_URL}/{MANGA_TITLE}"
-LIST_URL = f"{MangaReader.BASE_URL}/alphabetical"
+OVERVIEW_URL = f"{BASE_URL}/{MANGA_TITLE}"
+LIST_URL = f"{BASE_URL}/alphabetical"
 OVERVIEW_PAGE = 'overview.html'
 MANGA_FIRST_PAGE = 'first_page.html'
 MANGA_NTH_PAGE = 'nth_page.html'
@@ -39,8 +39,13 @@ def mangareader():
     return MangaReader()
 
 
+@pytest.fixture
+def scraper(mangareader):
+    return mangareader.get_scraper(MANGA_TITLE)
+
+
 def test_get_manga_object(mocker, mangareader):
-    mocker.patch('reader.sources.MangaReader._get_page_count', return_value=2)
+    mocker.patch('reader.sources.mangareader.MangaReaderScraper._get_page_count', return_value=2)
     manga = mangareader.get_manga(MANGA_TITLE)
     assert manga.chapters == [
         Chapter(152, [
@@ -62,22 +67,21 @@ def test_source_is_singleton(mangareader):
     assert mangareader == MangaReader()
 
 
-def test_get_chapters(mangareader):
-    chapters = mangareader.get_chapters(MANGA_TITLE)
-    chapters = [chapter.number for chapter in chapters]
-    assert chapters == [152, 1, 2]
+def test_get_chapters(scraper):
+    chapters = scraper.get_chapters()
+    assert chapters == ['152', '1', '2']
 
 
-def test_get_page_count(mangareader):
-    assert mangareader._get_page_count(MANGA_TITLE, CHAPTER) == 25
+def test_get_page_count(scraper):
+    assert scraper._get_page_count(CHAPTER) == 25
 
 
-def test_get_image_url_for_first_page(mangareader):
-    assert mangareader._get_page_url(MANGA_TITLE, CHAPTER, 1) == "https://i5.imggur.net/fuuka/2/fuuka-4798605.jpg"
+def test_get_image_url_for_first_page(scraper):
+    assert scraper._get_page_url(CHAPTER, 1) == "https://i5.imggur.net/fuuka/2/fuuka-4798605.jpg"
 
 
-def test_get_image_url_for_nth_page(mangareader):
-    assert mangareader._get_page_url(MANGA_TITLE, CHAPTER, PAGE) == "https://i5.imggur.net/fuuka/2/fuuka-4798607.jpg"
+def test_get_image_url_for_nth_page(scraper):
+    assert scraper._get_page_url(CHAPTER, PAGE) == "https://i5.imggur.net/fuuka/2/fuuka-4798607.jpg"
 
 
 def test_parse_manga_properties(mangareader):

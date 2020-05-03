@@ -1,4 +1,5 @@
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
 
@@ -13,41 +14,48 @@ class Downloader(object):
 
     def __init__(self, manga_home=MANGA_DOWNLOAD_DIRECTORY):
         self.manga_home = manga_home
-        self.chapter_dir = None
 
-    def download_manga(self, manga: Manga):
+    def download_manga(self, manga: Manga, force=False):
         for chapter in manga.chapters:
-            self._build_chapter_dirpath(manga, chapter)
-            if not os.path.exists(self.chapter_dir):
-                self.download_chapter(manga, chapter)
+            self.download_chapter(manga.title, chapter, force=force)
 
-    def _build_chapter_dirpath(self, manga, chapter):
-        self.chapter_dir = os.path.join(self.manga_home, manga.title, str(chapter.number))
+    def download_chapter(self, title, chapter: Chapter, force=False):
+        dirpath = os.path.join(self.manga_home, title)
+        return self._ChapterDownloader(dirpath, chapter).download(force)
 
-    def download_chapter(self, manga: Manga, chapter: Chapter):
-        if not self.chapter_dir:
-            self._build_chapter_dirpath(manga, chapter)
-        os.makedirs(self.chapter_dir, exist_ok=True)
-        for page in chapter.pages:
-            self._download_page(page)
+    class _ChapterDownloader(object):
 
-    def _download_page(self, page: Page):
-        filepath = self._build_page_filepath(page)
-        self._stream_remote_image(page.image_url, filepath)
+        def __init__(self, path, chapter):
+            self.chapter = chapter
+            self.chapter_dir = os.path.join(path, str(chapter.number))
 
-    def _build_page_filepath(self, page):
-        if not self.chapter_dir:
-            raise Exception("No ")
-        filetype = page.image_url.split('.')[-1]
-        filename = f'{page.number}.{filetype}'
-        return os.path.join(self.chapter_dir, filename)
+        def download(self, force=False):
+            if os.path.exists(self.chapter_dir) and not force:
+                return ()  # chapter exists on disk, skip
+            os.makedirs(self.chapter_dir, exist_ok=True)
+            failed_pages = []
+            for page in self.chapter.pages:
+                try:
+                    self._download_page(page)
+                except Exception:
+                    failed_pages.append(page)
+            return (self.chapter.number, failed_pages) if failed_pages else ()
 
-    def _stream_remote_image(self, url, filepath):
-        stream = requests.get(url, stream=True)
-        stream.raise_for_status()
-        self._stream_image_to_file(stream, filepath)
+        def _download_page(self, page: Page):
+            filepath = self._build_page_filepath(page)
+            self._stream_remote_image(page.image_url, filepath)
 
-    def _stream_image_to_file(self, stream, filepath):
-        with open(filepath, 'wb') as image_file:
-            for chunk in stream.iter_content(1024):
-                image_file.write(chunk)
+        def _build_page_filepath(self, page):
+            filetype = page.image_url.split('.')[-1]
+            filename = f'{page.number}.{filetype}'
+            return os.path.join(self.chapter_dir, filename)
+
+        def _stream_remote_image(self, url, filepath):
+            stream = requests.get(url, stream=True)
+            stream.raise_for_status()
+            self._stream_image_to_file(stream, filepath)
+
+        def _stream_image_to_file(self, stream, filepath):
+            with open(filepath, 'wb') as image_file:
+                for chunk in stream.iter_content(1024):
+                    image_file.write(chunk)

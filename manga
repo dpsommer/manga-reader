@@ -1,14 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import os
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import click
 
 from reader.exceptions import NoSuchSource
+from reader.manga import Manga, Chapter, Page
 from reader.search import SearchEngine
 from reader.sources import SourceFactory, SOURCES
-from reader.utils import Downloader
+from reader.utils import Downloader, MANGA_DOWNLOAD_DIRECTORY
 
 DEFAULT_SOURCE = 'mangareader'
+MAX_WORKERS = 100
+
+executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
+thread_context = threading.local()
 
 
 @click.group()
@@ -27,10 +35,14 @@ def search(query):
             manga = source.get_manga_list()
             click.echo(f"Collecting all manga from {source_class.__name__}...")
             indexable_documents = []
-            with click.progressbar(length=len(manga)) as bar:
-                for document in source.generate_indexable_documents(manga):
-                    bar.update(1)
-                    indexable_documents.append(document)
+            parser = source.get_document_parser(thread_context)
+            futures = [executor.submit(parser.parse, title) for title in manga]
+            with click.progressbar(length=len(futures)) as bar:
+                for future in as_completed(futures):
+                    try:
+                        indexable_documents.append(future.result())
+                    except Exception:
+                        pass
             click.echo(f"Found {len(indexable_documents)} manga.")
             click.echo(f"Building {source_class.__name__} index...")
             with click.progressbar(indexable_documents) as bar:
@@ -45,23 +57,60 @@ def search(query):
 @click.argument('title')
 @click.option('-s', '--source')
 @click.option('-c', '--chapter')
-def download(title, source, chapter):
+@click.option('-f', '--force', is_flag=True)
+def download(title, source, chapter, force):
     try:
         downloader = Downloader()
         source = SourceFactory.instance(source or DEFAULT_SOURCE)
-        manga = source.get_manga(title)
+        click.echo(f"Downloading {title} from {source.__class__.__name__}.")
+        failed_pages = []
         if chapter:
-            downloader.download_chapter(manga, chapter)
+            pages = source.get_pages(title, chapter)
+            manga = Manga(title, chapters=[Chapter(chapter, pages=pages)])
+            failed = downloader.download_chapter(manga, chapter, force=force)
+            if failed:
+                failed_pages.append(failed)
             click.echo(f'Finished downloading "{manga.title}" chapter #{chapter.number}')
         else:
-            downloader.download_manga(manga)
-            click.echo(f'Finished downloading all chapters of "{manga.title}"')
+            click.echo(f"Gathering links to all chapters and images...")
+            scraper = source.get_scraper(title)
+            chapter_list = scraper.get_chapters()
+            chapters = []
+            futures = {executor.submit(scraper.get_pages, chapter): chapter for chapter in chapter_list}
+            with click.progressbar(length=len(futures)) as bar:
+                for future in as_completed(futures):
+                    try:
+                        bar.update(1)
+                        chapters.append(Chapter(futures[future], pages=future.result()))
+                    except Exception:
+                        pass
+            click.echo("Done.")
+            manga = Manga(title, chapters=chapters)
+            click.echo("Downloading chapters...")
+            futures = [executor.submit(downloader.download_chapter, manga.title, chapter, force) for chapter in manga.chapters]
+            with click.progressbar(length=len(futures)) as bar:
+                for future in as_completed(futures):
+                    try:
+                        bar.update(1)
+                        failed = future.result()
+                        if failed:
+                            failed_pages.append(failed)
+                    except Exception:
+                        pass
+        if failed_pages:
+            click.echo(f'The following pages failed to download:')
+            for chapter, failed in failed_pages:
+                click.echo(f"Chapter {chapter}, page(s) {', '.join(failed)}")
+            click.echo(f'Please try redownloading the failed chapters with the --force flag.')
+        click.echo(f'Finished downloading all chapters of "{manga.title}"')
     except NoSuchSource as e:
         click.echo(f"Encountered an error: {str(e)} for given source '{source}'")
 
 
 @click.command()
-def read():
+@click.argument('manga')
+@click.option('-c', '--chapter')
+def read(manga, chapter):
     pass
 
 
@@ -77,4 +126,5 @@ cli.add_command(version)
 
 
 if __name__ == '__main__':
-    cli()
+    with executor:
+        cli()

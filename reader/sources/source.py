@@ -1,3 +1,4 @@
+import re
 import threading
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -12,7 +13,7 @@ class DocumentParser(ABC):
 
     def parse(self, title):
         self.context.url = self._get_url(title)
-        self.context.page_content = self._get_page_content(title)
+        self.context.parser = self._get_page_parser(title)
         return {
             "title": self._parse_title(),
             "author": self._parse_author(),
@@ -24,7 +25,7 @@ class DocumentParser(ABC):
         }
 
     @abstractmethod
-    def _get_page_content(self, title):
+    def _get_page_parser(self, title):
         pass
 
     @abstractmethod
@@ -56,10 +57,35 @@ class DocumentParser(ABC):
         pass
 
 
+class Scraper(ABC):
+
+    def __init__(self, title):
+        self.title = self._normalize(title)
+
+    @staticmethod
+    def _normalize(input_str):
+        output = re.sub('[^A-Za-z0-9 ]+', '', input_str)
+        return output.replace(' ', '-').lower()
+
+    @abstractmethod
+    def get_chapters(self):
+        pass
+
+    def get_pages(self, chapter):
+        pages = range(1, self._get_page_count(chapter) + 1)
+        return [Page(page, self._get_page_url(chapter, page)) for page in pages]
+
+    @abstractmethod
+    def _get_page_count(self, chapter):
+        pass
+
+    @abstractmethod
+    def _get_page_url(self, chapter, page):
+        pass
+
+
 class Source(ABC):
 
-    BASE_URL = ''
-    CRAWLER_MAX_WORKERS = 100
     __instance = None
 
     def __new__(cls):
@@ -68,35 +94,29 @@ class Source(ABC):
         return cls.__instance
 
     def get_manga(self, title):
-        return Manga(title, self.get_chapters(title))
+        scraper = self.get_scraper(title)
+        chapters = scraper.get_chapters()
+        return Manga(title, chapters=[Chapter(chapter, pages=scraper.get_pages(chapter)) for chapter in chapters])
 
     @abstractmethod
-    def get_chapters(self, title):
-        pass
-
-    @abstractmethod
-    def get_pages(self, title, chapter):
+    def get_scraper(self, title) -> Scraper:
         pass
 
     def crawl(self):
-        manga_list = self.get_manga_list()
-        return [document for document in self.generate_indexable_documents(manga_list)]
+        thread_context = threading.local()
+        parser = self.get_document_parser(thread_context)
+        documents = []
+        for title in self.get_manga_list():
+            try:
+                documents.append(parser.parse(title))
+            except Exception:
+                pass
+        return documents
 
     @abstractmethod
     def get_manga_list(self):
         pass
 
     @abstractmethod
-    def _get_document_parser(self, context) -> DocumentParser:
+    def get_document_parser(self, context: threading.local) -> DocumentParser:
         pass
-
-    def generate_indexable_documents(self, titles):
-        thread_context = threading.local()
-        parser = self._get_document_parser(thread_context)
-        with ThreadPoolExecutor(max_workers=self.CRAWLER_MAX_WORKERS) as executor:
-            futures = [executor.submit(parser.parse, title) for title in titles]
-            for future in as_completed(futures):
-                try:
-                    yield future.result()
-                except Exception:
-                    pass
