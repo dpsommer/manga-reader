@@ -15,13 +15,13 @@ class DocumentParser(ABC):
         self.context.url = self._get_url(title)
         self.context.parser = self._get_page_parser(title)
         return {
-            "title": self._parse_title(),
-            "author": self._parse_author(),
-            "artist": self._parse_artist(),
-            "description": self._parse_description(),
-            "tags": self._parse_tags(),
-            "completed": self._parse_completion_status(),
-            "url": self.context.url
+            "title": str(self._parse_title()),
+            "author": str(self._parse_author()),
+            "artist": str(self._parse_artist()),
+            "description": str(self._parse_description()),
+            "tags": str(self._parse_tags()),
+            "completed": bool(self._parse_completion_status()),
+            "url": str(self.context.url)
         }
 
     @abstractmethod
@@ -87,6 +87,11 @@ class Source(ABC):
         if cls.__instance is None:
             cls.__instance = object.__new__(cls)
         return cls.__instance
+
+    @staticmethod
+    def normalize(input_str):
+        output = re.sub('[^A-Za-z0-9 ]+', '', input_str)
+        return output.replace(' ', '-').lower()
 
     def get_manga(self, title):
         scraper = self.get_scraper(title)

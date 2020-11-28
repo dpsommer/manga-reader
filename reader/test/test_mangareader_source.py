@@ -49,16 +49,16 @@ def test_get_manga_object(mocker, mangareader):
     manga = mangareader.get_manga(MANGA_TITLE)
     assert manga.chapters == [
         Chapter(152, [
-            Page(1, 'https://i5.imggur.net/fuuka/2/fuuka-4798605.jpg'),
-            Page(2, 'https://i5.imggur.net/fuuka/2/fuuka-4798607.jpg')
+            Page(1, 'https://i10.imggur.net/fuuka/2/fuuka-4798605.jpg'),
+            Page(2, 'https://i8.imggur.net/fuuka/2/fuuka-4798607.jpg')
         ]),
         Chapter(1, [
-            Page(1, 'https://i5.imggur.net/fuuka/2/fuuka-4798605.jpg'),
-            Page(2, 'https://i5.imggur.net/fuuka/2/fuuka-4798607.jpg')
+            Page(1, 'https://i10.imggur.net/fuuka/2/fuuka-4798605.jpg'),
+            Page(2, 'https://i8.imggur.net/fuuka/2/fuuka-4798607.jpg')
         ]),
         Chapter(2, [
-            Page(1, 'https://i5.imggur.net/fuuka/2/fuuka-4798605.jpg'),
-            Page(2, 'https://i5.imggur.net/fuuka/2/fuuka-4798607.jpg')
+            Page(1, 'https://i10.imggur.net/fuuka/2/fuuka-4798605.jpg'),
+            Page(2, 'https://i8.imggur.net/fuuka/2/fuuka-4798607.jpg')
         ])
     ]
 
@@ -77,11 +77,11 @@ def test_get_page_count(scraper):
 
 
 def test_get_image_url_for_first_page(scraper):
-    assert scraper._get_page_url(CHAPTER, 1) == "https://i5.imggur.net/fuuka/2/fuuka-4798605.jpg"
+    assert scraper._get_page_url(CHAPTER, 1) == "https://i10.imggur.net/fuuka/2/fuuka-4798605.jpg"
 
 
 def test_get_image_url_for_nth_page(scraper):
-    assert scraper._get_page_url(CHAPTER, PAGE) == "https://i5.imggur.net/fuuka/2/fuuka-4798607.jpg"
+    assert scraper._get_page_url(CHAPTER, PAGE) == "https://i8.imggur.net/fuuka/2/fuuka-4798607.jpg"
 
 
 def test_parse_manga_properties(mangareader):
