@@ -32,20 +32,20 @@ def search(query, results):
     if search_engine._index.is_empty():
         click.echo("Missing or empty manga index. Rebuilding index for all sources.")
         build_search_engine_index(search_engine)
-    result_count = results or DEFAULT_RESULT_COUNT
+    result_count = int(results or DEFAULT_RESULT_COUNT)
     results = search_engine.search(query, results_count=result_count)
     for result in results:
         click.echo(result)
 
 
-def build_search_engine_index(search_engine):
-    for source in SOURCES:
+def build_search_engine_index(search_engine, sources=SOURCES):
+    for source in sources:
         click.echo(f"Collecting all manga from {source.__class__.__name__}...")
         indexable_documents = collect_indexable_documents(source)
         click.echo(f"Found {len(indexable_documents)} manga.")
         click.echo(f"Building {source.__class__.__name__} index...")
         show_indexing_progress_bar(search_engine, indexable_documents)
-        click.echo("Done.")
+        click.echo(f"Finished indexing {source.__class__.__name__}.")
 
 
 def collect_indexable_documents(source):
