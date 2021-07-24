@@ -69,6 +69,15 @@ def show_indexing_progress_bar(search_engine, documents):
 
 
 @click.command()
+@click.option('-a', '--all_sources', is_flag=True)
+@click.option('-s', '--source')
+def index(all_sources, source):
+    search_engine = SearchEngine()
+    sources = SOURCES if all_sources else {SourceFactory.instance(source or DEFAULT_SOURCE)}
+    build_search_engine_index(search_engine, sources=sources)
+
+
+@click.command()
 @click.argument('title')
 @click.option('-s', '--source')
 @click.option('-c', '--chapter')
@@ -130,6 +139,7 @@ def version():
         click.echo(f"Version {f.read()}")
 
 cli.add_command(search)
+cli.add_command(index)
 cli.add_command(download)
 cli.add_command(read)
 cli.add_command(version)
