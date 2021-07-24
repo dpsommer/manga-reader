@@ -6,11 +6,11 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import click
 
-from reader.exceptions import NoSuchSource
-from reader.manga import Manga, Chapter, Page
-from reader.search import SearchEngine, DEFAULT_RESULT_COUNT
-from reader.sources import SourceFactory, SOURCES
-from reader.utils import Downloader, MANGA_DOWNLOAD_DIRECTORY
+from mangareader.exceptions import NoSuchSource
+from mangareader.manga import Manga, Chapter, Page
+from mangareader.search import SearchEngine, DEFAULT_RESULT_COUNT
+from mangareader.sources import SourceFactory, SOURCES
+from mangareader.utils import Downloader, MANGA_DOWNLOAD_DIRECTORY
 
 DEFAULT_SOURCE = 'mangareader'
 MAX_WORKERS = 100
