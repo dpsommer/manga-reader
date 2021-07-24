@@ -2,7 +2,6 @@
 branch = true
 parallel = true
 source =
-    reader/
+    mangareader/
 omit =
     */__init__.py
-    reader/test/*

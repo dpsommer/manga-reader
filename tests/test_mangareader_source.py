@@ -4,13 +4,13 @@ import threading
 
 import pytest
 
-from ..manga import Manga, Chapter, Page
-from ..sources.mangareader import MangaReader, BASE_URL
+from mangareader.manga import Manga, Chapter, Page
+from mangareader.sources.mangareader import MangaReader, BASE_URL
 
 MANGA_TITLE = 'fuuka'
 CHAPTER = 2
 PAGE = 2
-DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'data', 'mangareader')
+DATA_DIR = os.path.join(pytest.DATA_DIR, 'mangareader')
 OVERVIEW_URL = f"{BASE_URL}/{MANGA_TITLE}"
 LIST_URL = f"{BASE_URL}/alphabetical"
 OVERVIEW_PAGE = 'overview.html'
@@ -45,7 +45,7 @@ def scraper(mangareader):
 
 
 def test_get_manga_object(mocker, mangareader):
-    mocker.patch('reader.sources.mangareader.MangaReaderScraper._get_page_count', return_value=2)
+    mocker.patch('mangareader.sources.mangareader.MangaReaderScraper._get_page_count', return_value=2)
     manga = mangareader.get_manga(MANGA_TITLE)
     assert manga.chapters == [
         Chapter(152, [

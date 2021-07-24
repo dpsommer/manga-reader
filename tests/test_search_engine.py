@@ -3,11 +3,10 @@ import os
 import pytest
 from whoosh.filedb.filestore import RamStorage
 
-from ..manga import MangaSchema
-from ..search import SearchEngine
-from .common import DIRPATH, clean_tree
+from mangareader.manga import MangaSchema
+from mangareader.search import SearchEngine
 
-TEST_INDEX_DIR = os.path.join(DIRPATH, 'test_index')
+TEST_INDEX_DIR = os.path.join(pytest.TEST_DIR_BASEPATH, 'test_index')
 
 
 @pytest.fixture(scope='module')
@@ -98,7 +97,7 @@ def index():
 
 @pytest.fixture
 def mock_search_engine(mocker, index, manga_documents):
-    mocker.patch('reader.search.search_engine.SearchEngine._load_index', return_value=index)
+    mocker.patch('mangareader.search.search_engine.SearchEngine._load_index', return_value=index)
     search_engine = SearchEngine(index_path=TEST_INDEX_DIR)
     search_engine.index(manga_documents)
     return search_engine
@@ -106,11 +105,11 @@ def mock_search_engine(mocker, index, manga_documents):
 
 @pytest.mark.functional
 @pytest.fixture(scope='module')
-def search_engine(manga_documents):
+def search_engine(manga_documents, clean_test_subtree):
     search_engine = SearchEngine(index_path=TEST_INDEX_DIR)
     search_engine.index(manga_documents)
     yield search_engine
-    clean_tree(TEST_INDEX_DIR)
+    clean_test_subtree(TEST_INDEX_DIR)
 
 
 def test_exact_match_search(mock_search_engine):

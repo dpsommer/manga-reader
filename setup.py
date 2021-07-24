@@ -8,7 +8,7 @@ with open('version', 'r') as f:
 
 
 setuptools.setup(
-    name='manga-reader-cli',
+    name='mangareader',
     version=version,
     scripts=['manga'],
     author="Duncan Sommerville",
@@ -16,10 +16,18 @@ setuptools.setup(
     description="Command line interface for searching, downloading, and reading manga",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    packages=setuptools.find_packages(),
+    # packages=["mangareader"],
+    package_dir={"": "src"},
+    install_requires=[
+        "click==7.1.1",
+        "requests==2.23.0",
+        "Whoosh==2.7.4",
+        "beautifulsoup4==4.9.0",
+        "lxml==4.5.0"
+    ],
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
-    test_suite="reader/test"
+    test_suite="tests"
 )
