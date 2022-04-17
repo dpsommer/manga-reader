@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 from .source import Source, Scraper, DocumentParser
 
 BASE_URL = 'http://www.mangareader.net'
-HTML_PARSER = 'lxml'
+HTML_PARSER = 'html.parser'
 
 
 class MangaReaderDocumentParser(DocumentParser):
