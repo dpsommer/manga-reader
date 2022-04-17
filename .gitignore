@@ -4,6 +4,14 @@
 __pycache__/
 venv/
 
+# pyenv
+
+.python-version
+
+# tox
+
+.tox/
+
 # pytest
 
 .coverage
@@ -16,6 +24,9 @@ dist/
 *.egg-info/
 
 # IDEs
+
 .vscode/
+
+# test files
 
 images/
